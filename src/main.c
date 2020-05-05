@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include "request.h"   
 #include "api.h"
+#include "semantic.h"
 
 int main(int argc, char* argv[])
 {
@@ -32,12 +33,13 @@ int main(int argc, char* argv[])
 		}
 
 		//Vérification sémantique
+		printf("value : %d\n", semantic_validation());
 
 		writeDirectClient(requete->clientId, "CAZOU", 6);
 		endWriteDirectClient(requete->clientId);
 
 		freeRequest(requete);
-		free(reponse);
+		//free(reponse);
 	}
 	return 1;
 }
