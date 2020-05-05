@@ -1,0 +1,4 @@
+GET / HTTP/1.0
+Cookie:AnAJ=; '6=]U|j(&; Kzx3|7awY7V$=@.|; k=|; N6h=zBt; `XWbEp=75Oe; Z|=7q; A="o1j"; L'4="e#0qeeD+Jwo"; UZORF!="D"	
+Cookie: 	  4'2o$2!!#=
+
