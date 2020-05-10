@@ -1,0 +1,17 @@
+Si un header est répété à plusieurs reprises dans la même requête :
+	400 Bad Request
+
+Si aucune méthode ou plusieurs méthodes dans la requête :
+	400 Bad Request
+
+Si la méthode est différente de GET, HEAD ou POST :
+	400 Bad Request
+
+Si aucune version d'http ou plusieurs versions d'http :
+	400 Bad Request
+
+Si la version est HTTP/1.1 et il n'y a aucun header host :
+	400 Bad Request
+
+Si la version d'http est supérieur à la combinaison MAX_MAJOR_VERSION,MAX_MINOR_VERSION :
+	400 Bad Request

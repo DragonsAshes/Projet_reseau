@@ -11,7 +11,9 @@
 int main(int argc, char* argv[])
 {
 	message* requete;
-	char* reponse;
+	char* response;
+	char* validation_sem = NULL;
+	_Token* tree;
 
 	while (1)
 	{
@@ -33,9 +35,12 @@ int main(int argc, char* argv[])
 		}
 
 		//Vérification sémantique
-		printf("value : %d\n", semantic_validation());
+		strcpy(validation_sem, semantic_validation());
 
-		writeDirectClient(requete->clientId, "CAZOU", 6);
+		//Création de la réponse en fonction du status code reçu
+		strcpy(response, createResponse(validation_sem));
+
+		writeDirectClient(requete->clientId, response, 6);
 		endWriteDirectClient(requete->clientId);
 
 		freeRequest(requete);

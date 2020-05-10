@@ -3,6 +3,14 @@
 
 int headers_unicity();
 
-int semantic_validation();
+char* semantic_validation();
+
+int http_check();
+
+int method_conformity();
+
+int get_conformity();
+
+char* createResponse(char* statuscode);
 
 #endif
