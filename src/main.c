@@ -11,7 +11,7 @@
 int main(int argc, char* argv[])
 {
 	message* requete;
-	char* response;
+	char* response = NULL;
 	char* validation_sem = NULL;
 	_Token* tree;
 
@@ -35,12 +35,13 @@ int main(int argc, char* argv[])
 		}
 
 		//Vérification sémantique
-		strcpy(validation_sem, semantic_validation());
+		validation_sem = semantic_validation();
 
 		//Création de la réponse en fonction du status code reçu
-		strcpy(response, createResponse(validation_sem));
+		response = createResponse(validation_sem);
+		//Envoyer la réponse par paquet de 2000octets
 
-		writeDirectClient(requete->clientId, response, 6);
+		writeDirectClient(requete->clientId, response, strlen(response));
 		endWriteDirectClient(requete->clientId);
 
 		freeRequest(requete);
