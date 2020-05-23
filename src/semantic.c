@@ -292,7 +292,10 @@ int request_target_treatment()
 		char* host = getElementValue(tree->node, &host_len);
 		if(strncmp("www.", host+6, 4))
 			strcat(rtarget_final, "www.");
-		strncat(rtarget_final, host+6, host_len-strlen("Host: "));
+		if(strncmp("127.0.0.1:8080", host+6, 14) == 0) //Le domaine par défaut est www.fake.com
+			strcat(rtarget_final, "fake.com");
+		else
+			strncat(rtarget_final, host+6, host_len-strlen("Host: "));
 	}
 
 	strcat(rtarget_final, rtarget_dsr);
@@ -404,12 +407,12 @@ char* semantic_validation()
 		strcpy(response, "501 Not Implemented");
 	if( http_check() == -1 && !strcmp(response, "") ) //vérification de la version HTTP, des headers alors obligatoires et du comportement par défaut pour la gestion de la connexion
 		strcpy(response, "505 HTTP Version Not Supported");
+	if( request_target_treatment() == -1 && !strcmp(response, "") )
+		strcpy(response, "400 Bad Request");
+	if(get_content() == -1 && !strcmp(response, "") )
+		strcpy(response, "404 Not Found");
 	if( !strcmp(response, "") )
-	{
 		strcpy(response, "200 OK");
-	}
-	request_target_treatment();
-	get_content();
 	printf("REPONSE : %s\n", response);
 	return response;
 }
@@ -458,5 +461,11 @@ char* createResponse(char* statuscode)
 			strcat(response, "\r\n");
 		}
 	}
+	free(elements.method);
+	free(elements.version);
+	free(elements.uri);
+	free(elements.mime);
+	free(elements.content);
+
 	return response;
 }
