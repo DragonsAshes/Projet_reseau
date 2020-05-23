@@ -1,4 +1,4 @@
 GET / HTTP/1.0
-Host: fake.com
+Host: troll.com
 Connection: close
 

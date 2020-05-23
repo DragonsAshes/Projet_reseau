@@ -110,10 +110,8 @@ int method_conformity()
 
 			if( atoi(tmp) != strlen(body))
 			{
-				free(tmp);
 				return -1;
 			}
-			free(tmp);
 		}
 		else{
 			return -1;
@@ -324,10 +322,6 @@ int request_target_treatment()
 	elements.uri = malloc(sizeof(char) * strlen(rtarget_final));
 	strcpy(elements.uri, rtarget_final);
 
-	free(hexa);
-	free(rtarget_final);
-	free(rtarget_pe);
-
 	return 0;
 }
 
@@ -405,7 +399,6 @@ void get_Mime()
 	}
 
 	pclose(f);
-	free(cmd);
 }
 
 
@@ -439,9 +432,10 @@ char* createResponse(char* statuscode)
 {
 	time_t t = time(NULL);
 	char buf[256];
-	char* response = malloc(sizeof(char)* 2000);
+	char* response;
 	if( strcmp(statuscode, "200 OK") != 0 )
 	{
+		response = malloc(sizeof(char)* 512);
 		strcpy(response, elements.version);
 		strcat(response, " ");
 		strcat(response, statuscode);
@@ -458,6 +452,7 @@ char* createResponse(char* statuscode)
 	}
 	else
 	{
+		response = malloc(sizeof(char)* 512 + strlen(elements.content));
 		strcpy(response, elements.version);
 		strcat(response, " ");
 		strcat(response, statuscode);
@@ -483,11 +478,6 @@ char* createResponse(char* statuscode)
 			strcat(response, "\r\n");
 		}
 	}
-	free(elements.method);
-	free(elements.version);
-	free(elements.uri);
-	free(elements.mime);
-	free(elements.content);
 
 	return response;
 }
