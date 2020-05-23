@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 
 		//Création de la réponse en fonction du status code reçu
 		response = createResponse(validation_sem);
-		//Envoyer la réponse par paquet de 2000octets
+		//Envoyer la réponse par paquet de 2000 octets
 
 		writeDirectClient(requete->clientId, response, strlen(response));
 		endWriteDirectClient(requete->clientId);
