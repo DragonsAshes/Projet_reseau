@@ -68,7 +68,12 @@ int method_conformity()
 	elements.method = malloc(sizeof(char) * (len+1));
 	strncpy(elements.method, method, len);
 	if( (strncmp(method, "GET", len) != 0) && (strncmp(method, "HEAD", len) != 0) && (strncmp(method, "POST", len) != 0) )
-		return -1;
+	{
+		if( !strncmp(method, "PUT", len) || !strncmp(method, "DELETE", len) || !strncmp(method, "CONNECT", len) || !strncmp(method, "OPTIONS", len) || !strncmp(method, "TRACE", len))
+			return -2;
+		else
+			return -1;
+	}
 
 	if( strncmp(method, "GET", len) == 0 )
 	{
@@ -104,14 +109,17 @@ int method_conformity()
 			strncpy(tmp, content_length+strlen("Content-Length: "), len-strlen("Content-Length: "));
 
 			if( atoi(tmp) != strlen(body))
+			{
+				free(tmp);
 				return -1;
+			}
+			free(tmp);
 		}
 		else{
 			return -1;
 		}
 
 	}
-
 	return 0;
 }
 
@@ -292,8 +300,8 @@ int request_target_treatment()
 		char* host = getElementValue(tree->node, &host_len);
 		if(strncmp("www.", host+6, 4))
 			strcat(rtarget_final, "www.");
-		if(strncmp("127.0.0.1:8080", host+6, 14) == 0) //Le domaine par défaut est www.fake.com
-			strcat(rtarget_final, "fake.com");
+		if(strncmp("127.0.0.1:8080", host+6, 14) == 0) //Redirection par défaut sur www.default.com
+			strcat(rtarget_final, "default.com");
 		else
 			strncat(rtarget_final, host+6, host_len-strlen("Host: "));
 	}
@@ -315,6 +323,11 @@ int request_target_treatment()
 	printf("target = %s\n", rtarget_final);
 	elements.uri = malloc(sizeof(char) * strlen(rtarget_final));
 	strcpy(elements.uri, rtarget_final);
+
+	free(hexa);
+	free(rtarget_final);
+	free(rtarget_pe);
+
 	return 0;
 }
 
@@ -392,7 +405,7 @@ void get_Mime()
 	}
 
 	pclose(f);
-
+	free(cmd);
 }
 
 
@@ -401,10 +414,14 @@ char* semantic_validation()
 	elements.version = malloc(sizeof(char) * 10);
 	elements.connection = malloc(sizeof(char) * 11);
 	char* response = malloc(sizeof(char) * 100);
+	int method_ret;
 	if( headers_unicity() == -1 ) //On regarde si chaque header est unique
 		strcpy(response, "400 Bad Request");
-	if( method_conformity() == -1 && !strcmp(response, "") ) //On vérifie la conformité des méthodes et du champ message body
+	method_ret = method_conformity();
+	if( method_ret == -1 && !strcmp(response, "") ) //On vérifie la conformité des méthodes et du champ message body
 		strcpy(response, "501 Not Implemented");
+	if( method_ret == -2 && ! strcmp(response, "") )
+		strcpy(response, "405 Not Allowed");
 	if( http_check() == -1 && !strcmp(response, "") ) //vérification de la version HTTP, des headers alors obligatoires et du comportement par défaut pour la gestion de la connexion
 		strcpy(response, "505 HTTP Version Not Supported");
 	if( request_target_treatment() == -1 && !strcmp(response, "") )
@@ -428,6 +445,11 @@ char* createResponse(char* statuscode)
 		strcpy(response, elements.version);
 		strcat(response, " ");
 		strcat(response, statuscode);
+		if( strncmp(statuscode, "405", 3) == 0 )
+		{
+			strcat(response, "\r\n");
+			strcat(response, "Allow: GET, POST, HEAD");
+		}
 		strcat(response, "\r\n\r\n");
 		strcat(response, "<html>");
 		strcat(response, "Error ");
