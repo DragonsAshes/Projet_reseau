@@ -3,6 +3,7 @@
 
 typedef struct elements
 {
+	char* method;
 	char* version;
 	char* connection;
 	char* uri;

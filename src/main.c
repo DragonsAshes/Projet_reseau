@@ -14,6 +14,7 @@ int main(int argc, char* argv[])
 	char* response = NULL;
 	char* validation_sem = NULL;
 	_Token* tree;
+	message* res;
 
 	while (1)
 	{
@@ -41,11 +42,22 @@ int main(int argc, char* argv[])
 		response = createResponse(validation_sem);
 		//Envoyer la réponse par paquet de 2000 octets
 
-		writeDirectClient(requete->clientId, response, strlen(response));
-		endWriteDirectClient(requete->clientId);
+		//writeDirectClient(requete->clientId, response, strlen(response));
+		//endWriteDirectClient(requete->clientId);
 
+		res = malloc(sizeof(message));
+		res->buf=response;
+		res->len=strlen(response);
+		res->clientId = requete->clientId;
+
+		sendReponse(res);
+
+		free(response);
+		free(res);
+
+		requestShutdownSocket(res->clientId);
 		freeRequest(requete);
-		//free(reponse);
+		
 	}
 	return 1;
 }

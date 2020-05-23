@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <time.h>
 #include "semantic.h"
 #include "api.h"
 
@@ -12,7 +13,7 @@
 
 
 char* headers[] = {"Transfer_Encoding_header", "Cookie_header", "Referer_header", "User_agent_header", "Accept_header", "Accept_Encoding_header",
-	 "Content_Length_header", "Host_header", "Connection_header", "Accept_Charset_header"};
+	 "Content_Length_header", "Host_header", "Connection_header"};
 int headers_length = 10;
 
 Elements elements;
@@ -51,7 +52,9 @@ int method_conformity()
 	void* root = getRootTree();
 	char* method = NULL;
 	char* body = NULL;
-	int len;
+	int len, body_len;
+	char* content_length;
+	char* tmp;
 
 	tree = searchTree(root, "method");
 
@@ -62,32 +65,45 @@ int method_conformity()
 		return -1;
 
 	method = getElementValue(tree->node, &len);
+	elements.method = malloc(sizeof(char) * (len+1));
+	strncpy(elements.method, method, len);
 	if( (strncmp(method, "GET", len) != 0) && (strncmp(method, "HEAD", len) != 0) && (strncmp(method, "POST", len) != 0) )
 		return -1;
 
 	if( strncmp(method, "GET", len) == 0 )
 	{
-		if( searchTree(root, "message_body") != NULL )
-			return -1;
+		tree = searchTree(root, "message_body");
+		if( tree != NULL )
+		{
+			body = getElementValue(tree->node, &body_len);
+			if( body_len != 0 )
+				return -1;
+		}
 	}
 	else if( strncmp(method, "HEAD", len) == 0 )
 	{
-		if( searchTree(root, "message_body") != NULL )
-			return -1;
+		tree = searchTree(root, "message_body");
+		if( tree != NULL )
+		{
+			body = getElementValue(tree->node, &body_len);
+			if( body_len != 0 )
+				return -1;
+		}
 	}
 	else if( strncmp(method, "POST", len) == 0 )
 	{
 		tree = searchTree(root, "message_body");
 		if( tree != NULL )
 		{
-			body = getElementValue(tree->node, NULL);
+			body = getElementValue(tree->node, &body_len);
 			tree = searchTree(root, "Content_Length_header");
 			if( tree == NULL )
 				return -1;
-			printf("LBODY : %s\n", getElementValue(tree->node, NULL));
-			//Utiliser strtok() pour récupérer la valeur
+			content_length = getElementValue(tree->node, &len);
+			tmp = malloc(sizeof(char) * (len-strlen("Content-Length: ")));
+			strncpy(tmp, content_length+strlen("Content-Length: "), len-strlen("Content-Length: "));
 
-			if( atoi(getElementValue(tree->node, NULL)) != strlen(body) )
+			if( atoi(tmp) != strlen(body))
 				return -1;
 		}
 		else{
@@ -106,7 +122,6 @@ int http_check()
 	void* root = getRootTree();
 	char* version = NULL;
 	char* etat = NULL;
-	char* etat2 = NULL;
 	float tmp;
 	int len;
 	char* sep = ": \r\n";
@@ -128,9 +143,8 @@ int http_check()
 		if( tree != NULL )
 		{
 			etat = getElementValue(tree->node, &len);
-			etat2 = strtok(etat, sep);
-			printf("Statut de la connexion :%s\n", etat2);
-			//Si ca vaut close -> elements.connection = close, idem pour keep-alive
+			strncpy(elements.connection, etat+strlen("Connection: "), len-strlen("Connection: "));
+			printf("Statut de la connexion :%s\n", elements.connection);
 		}
 		else
 			strcpy(elements.connection, "close");
@@ -144,9 +158,8 @@ int http_check()
 		if( tree != NULL )
 		{
 			etat = getElementValue(tree->node, &len);
-			etat2 = strtok(etat, sep);
-			printf("Statut de la connexion :%s\n", etat2);
-			//Si ca vaut close -> elements.connection = close, idem pour keep-alive
+			strncpy(elements.connection, etat+strlen("Connection: "), len-strlen("Connection: "));
+			printf("Statut de la connexion :%s\n", elements.connection);
 		}
 		else
 			strcpy(elements.connection, "keep_alive");
@@ -177,8 +190,15 @@ int request_target_treatment()
 	char* rtarget;
 	char* hexa = malloc(sizeof(char)*3);
 	char* rtarget_pe, *rtarget_dsr;
+	char* origin_form;
+
+	tree = searchTree(root, "origin_form");
+	if(tree == NULL)
+		return -1;
+	origin_form = getElementValue(tree->node, &len);
 
 	tree = searchTree(root, "request_target");
+
 
 	if(tree == NULL)
 		return -1;
@@ -187,6 +207,10 @@ int request_target_treatment()
 		return -1;
 
 	rtarget = getElementValue(tree->node, &len);
+
+	//Vérification origin form
+	if( strncmp(origin_form, rtarget, len) != 0 )
+		return -1;
 
 	printf("target initial : %d %s\n",len, rtarget);
 
@@ -259,13 +283,15 @@ int request_target_treatment()
 
 	char* rtarget_final = malloc( sizeof(char) * (strlen(rtarget_dsr) + strlen("index.html") + 5));
 
-	strcpy(rtarget_final, "www.");
+
 
 	tree = searchTree(root, "Host_header");
 	if( tree != NULL )
 	{
 		int host_len;
 		char* host = getElementValue(tree->node, &host_len);
+		if(strncmp("www.", host+6, 4))
+			strcat(rtarget_final, "www.");
 		strncat(rtarget_final, host+6, host_len-strlen("Host: "));
 	}
 
@@ -307,7 +333,7 @@ int get_content()
 		return -1;
 	}
 
-	FILE* f = fopen(elements.uri, "r");
+	FILE* f = fopen(elements.uri, "rb");
 	if( f == NULL )
 	{
 		printf("ERREUR FOPEN\n");
@@ -374,10 +400,10 @@ char* semantic_validation()
 	char* response = malloc(sizeof(char) * 100);
 	if( headers_unicity() == -1 ) //On regarde si chaque header est unique
 		strcpy(response, "400 Bad Request");
-	if( method_conformity() == -1 && response == NULL ) //On vérifie la conformité des méthodes et du champ message body
+	if( method_conformity() == -1 && !strcmp(response, "") ) //On vérifie la conformité des méthodes et du champ message body
 		strcpy(response, "501 Not Implemented");
-	if( http_check() == -1 && response == NULL ) //vérification de la version HTTP, des headers alors obligatoires et du comportement par défaut pour la gestion de la connexion
-		strcpy(response, "400 Bad Request");
+	if( http_check() == -1 && !strcmp(response, "") ) //vérification de la version HTTP, des headers alors obligatoires et du comportement par défaut pour la gestion de la connexion
+		strcpy(response, "505 HTTP Version Not Supported");
 	if( !strcmp(response, "") )
 	{
 		strcpy(response, "200 OK");
@@ -391,6 +417,8 @@ char* semantic_validation()
 
 char* createResponse(char* statuscode)
 {
+	time_t t = time(NULL);
+	char buf[256];
 	char* response = malloc(sizeof(char)* 2000);
 	if( strcmp(statuscode, "200 OK") != 0 )
 	{
@@ -402,7 +430,6 @@ char* createResponse(char* statuscode)
 		strcat(response, "Error ");
 		strcat(response, statuscode);
 		strcat(response, "</html>");
-		return response;
 	}
 	else
 	{
@@ -410,5 +437,26 @@ char* createResponse(char* statuscode)
 		strcat(response, " ");
 		strcat(response, statuscode);
 		strcat(response, "\r\n");
+		strcat(response, "Date: ");
+		strftime(buf, sizeof(buf), "%A %d %B %Y - %X.", localtime(&t));
+		strcat(response, buf);
+		strcat(response, "\r\n");
+		strcat(response, "Connection: ");
+		strcat(response, elements.connection);
+		strcat(response, "\r\n");
+		strcat(response, "Content-type: ");
+		strcat(response, elements.mime);
+		strcat(response, "\r\n");
+		strcat(response, "Content-Length: ");
+		char* len;
+		sprintf(len, "%ld", strlen(elements.content));
+		strcat(response, len);
+		strcat(response, "\r\n\r\n");
+		if(strcmp(elements.method, "HEAD") != 0)
+		{
+			strcat(response, elements.content);
+			strcat(response, "\r\n");
+		}
 	}
+	return response;
 }
