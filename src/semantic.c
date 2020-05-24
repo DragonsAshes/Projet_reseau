@@ -66,7 +66,7 @@ int method_conformity()
 	}
 
 	method = getElementValue(tree->node, &len);
-	elements.method = malloc(len+1);
+	elements.method = calloc(len+1, 1);
 	strncpy(elements.method, method, len);
 	if( (strncmp(method, "GET", len) != 0) && (strncmp(method, "HEAD", len) != 0) && (strncmp(method, "POST", len) != 0) )
 	{
@@ -120,7 +120,7 @@ int method_conformity()
 			if( tree == NULL )
 				return -1;
 			content_length = getElementValue(tree->node, &len);
-			tmp = malloc(sizeof(char) * (len-strlen("Content-Length: ")));
+			tmp = calloc(len-strlen("Content-Length: "), 1);
 			strncpy(tmp, content_length+strlen("Content-Length: "), len-strlen("Content-Length: "));
 
 			if( atoi(tmp) != strlen(body))
@@ -161,7 +161,7 @@ int http_check()
 	}
 
 	version = getElementValue(tree->node, &len);
-	elements.version = malloc(len+1);
+	elements.version = calloc(len+1, 1);
 	strncpy(elements.version,version, len);
 
 	if( strncmp(version, "HTTP/1.0", len) == 0 )
@@ -171,13 +171,13 @@ int http_check()
 		if( tree != NULL )
 		{
 			etat = getElementValue(tree->node, &len);
-			elements.connection = malloc(len +1);
-			strncpy(elements.connection, etat+12, len-12);
+			elements.connection = calloc(len +1, 1);
+			strncpy(elements.connection, etat+strlen("Connection: "), len-strlen("Connection: "));
 			printf("Statut de la connexion: %s\n", elements.connection);
 		}
 		else
 		{
-			elements.connection = malloc(6);
+			elements.connection = calloc(6, 1);
 			strcpy(elements.connection, "close");
 		}
 		purgeElement(&tree);
@@ -191,13 +191,13 @@ int http_check()
 		if( tree != NULL )
 		{
 			etat = getElementValue(tree->node, &len);
-			elements.connection = malloc(len+1);
-			strncpy(elements.connection, etat+12, len-12);
+			elements.connection = calloc(len+1, 1);
+			strncpy(elements.connection, etat+strlen("Connection: "), len-strlen("Connection: "));
 			printf("Statut de la connexion: %s\n", elements.connection);
 		}
 		else
 		{
-			elements.connection = malloc(11);
+			elements.connection = calloc(11, 1);
 			strcpy(elements.connection, "keep_alive");
 		}
 		purgeElement(&tree);
@@ -226,7 +226,7 @@ int request_target_treatment()
 	int j = 0;
 	void* root = getRootTree();
 	char* rtarget;
-	char* hexa = malloc(sizeof(char)*3);
+	char* hexa = calloc(3, 1);
 	char* rtarget_pe, *rtarget_dsr;
 	char* origin_form;
 
@@ -256,7 +256,7 @@ int request_target_treatment()
 		return -1;
 	}
 
-	rtarget_pe = malloc(sizeof(char)*len+1);
+	rtarget_pe = calloc(len+1, 1);
 
 	for(int i = 0; i < len; i++)
 	{
@@ -278,7 +278,7 @@ int request_target_treatment()
 	len = strlen(rtarget_pe);
 	j = 0;
 
-	rtarget_dsr = malloc(sizeof(char)* len+1);
+	rtarget_dsr = calloc(len+1, 1);
 
 	for(int i = 0; i < len; i++)
 	{
@@ -323,7 +323,7 @@ int request_target_treatment()
 	rtarget_dsr[j] = '\0';
 
 
-	char* rtarget_final = malloc( sizeof(char) * (strlen(rtarget_dsr) + strlen("index.html") + 32));
+	char* rtarget_final = calloc(strlen(rtarget_dsr) + strlen("index.html") + 32, 1);
 
 
 
@@ -355,7 +355,7 @@ int request_target_treatment()
 		strcat(rtarget_final, "index.html");
 	}
 	printf("target = %s\n", rtarget_final);
-	elements.uri = malloc(sizeof(char) * strlen(rtarget_final)+1);
+	elements.uri = calloc(strlen(rtarget_final)+1, 1);
 	strcpy(elements.uri, rtarget_final);
 
 	purgeElement(&tree);
@@ -398,7 +398,7 @@ int get_content()
 
 	fseek(f, 0, SEEK_SET);
 
-	elements.content = malloc(len + 1);
+	elements.content = calloc(len + 1, 1);
 	fread( elements.content, 1, len, f);
 
 	fclose(f);
@@ -408,7 +408,7 @@ int get_content()
 
 void get_Mime()
 {
-	char* cmd = malloc(sizeof(char)* (strlen("file -i ") + strlen(elements.uri) +1) );
+	char* cmd = calloc(strlen("file -i ") + strlen(elements.uri) +1, 1);
 	strcpy(cmd, "file -i ");
 	strcat(cmd, elements.uri);
 	printf("check : %s\n", cmd);
@@ -433,7 +433,7 @@ void get_Mime()
 		tmp = strtok( NULL, ":; ");
 		if(tmp != NULL)
 		{
-			elements.mime = malloc(sizeof(char) * strlen(tmp) + 1);
+			elements.mime = calloc(strlen(tmp) + 1, 1);
 			strcpy(elements.mime, tmp);
 		}
 	}
@@ -445,7 +445,7 @@ void get_Mime()
 
 char* semantic_validation()
 {
-	char* response = malloc(sizeof(char) * 100);
+	char* response = calloc(100, 1);
 	int method_ret;
 	if( headers_unicity() == -1 ) //On regarde si chaque header est unique
 		strcpy(response, "400 Bad Request");
@@ -476,7 +476,7 @@ char* createResponse(char* statuscode)
 	int size = 0;
 	if( strcmp(statuscode, "200 OK") != 0 )
 	{
-		response = malloc(sizeof(char)* 512);
+		response = calloc(512, 1);
 		strcpy(response, elements.version);
 		strcat(response, " ");
 		strcat(response, statuscode);
@@ -487,7 +487,7 @@ char* createResponse(char* statuscode)
 		}
 		strcat(response, "\r\n");
 		strcat(response, "Content-Length: ");
-		len = malloc(10);
+		len = calloc(10, 1);
 		size = strlen(statuscode);
 		size += 16;
 		sprintf(len, "%d", size);
@@ -500,7 +500,7 @@ char* createResponse(char* statuscode)
 	}
 	else
 	{
-		response = malloc(512 + strlen(elements.content));
+		response = calloc(512 + strlen(elements.content), 1);
 		strcpy(response, elements.version);
 		strcat(response, " ");
 		strcat(response, statuscode);
@@ -516,7 +516,7 @@ char* createResponse(char* statuscode)
 		strcat(response, elements.mime);
 		strcat(response, "\r\n");
 		strcat(response, "Content-Length: ");
-		len = malloc(10);
+		len = calloc(10, 1);
 		size = strlen(elements.content);
 		sprintf(len, "%d", size);
 		strcat(response, len);
