@@ -1,4 +1,3 @@
 GET / HTTP/1.0
 Host: troll.com
-Connection: close
-
+Connection: keep-alive

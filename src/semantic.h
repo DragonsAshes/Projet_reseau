@@ -11,6 +11,7 @@ typedef struct elements
 	char* content;
 } Elements;
 
+char* get_connection();
 
 int headers_unicity();
 

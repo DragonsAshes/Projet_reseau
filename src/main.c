@@ -1,10 +1,10 @@
-#include <stdio.h> 
-#include <stdlib.h> 
-#include <string.h> 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "request.h"   
+#include "request.h"
 #include "api.h"
 #include "semantic.h"
 
@@ -18,13 +18,13 @@ int main(int argc, char* argv[])
 
 	while (1)
 	{
-		// on attend la reception d'une requete HTTP requete pointera vers une ressource allouée par librequest. 
-		if ((requete=getRequest(8080)) == NULL ) return -1; 
+		// on attend la reception d'une requete HTTP requete pointera vers une ressource allouée par librequest.
+		if ((requete=getRequest(8080)) == NULL ) return -1;
 
-		// Affichage de debug 
-		printf("#########################################\nDemande recue depuis le client %d\n",requete->clientId); 
+		// Affichage de debug
+		printf("#########################################\nDemande recue depuis le client %d\n",requete->clientId);
 		printf("Client [%d] [%s:%d]\n",requete->clientId,inet_ntoa(requete->clientAddress->sin_addr),htons(requete->clientAddress->sin_port));
-		printf("Contenu de la demande %.*s\n\n",requete->len,requete->buf);
+		printf("Contenu de la demande :\n%.*s\n\n",requete->len,requete->buf);
 
 		//Vérification syntaxique
 		if( parseur(requete->buf, requete->len) == 0 ) //Si le message n'a pas une syntaxe correcte
@@ -40,10 +40,6 @@ int main(int argc, char* argv[])
 
 		//Création de la réponse en fonction du status code reçu
 		response = createResponse(validation_sem);
-		//Envoyer la réponse par paquet de 2000 octets
-
-		//writeDirectClient(requete->clientId, response, strlen(response));
-		//endWriteDirectClient(requete->clientId);
 
 		res = malloc(sizeof(message));
 		res->buf=response;
@@ -54,10 +50,14 @@ int main(int argc, char* argv[])
 
 		free(response);
 		free(res);
-
-		requestShutdownSocket(res->clientId);
+		char* co = get_connection();
+		if (strcmp(co,"close")){
+			requestShutdownSocket(res->clientId);
+		}
+		purgeTree(getRootTree());
 		freeRequest(requete);
-		
+		free(validation_sem);
+		free(co);
 	}
 	return 1;
 }

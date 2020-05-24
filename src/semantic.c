@@ -14,7 +14,7 @@
 
 char* headers[] = {"Transfer_Encoding_header", "Cookie_header", "Referer_header", "User_agent_header", "Accept_header", "Accept_Encoding_header",
 	 "Content_Length_header", "Host_header", "Connection_header"};
-int headers_length = 10;
+int headers_length = 9;
 
 Elements elements;
 
@@ -32,10 +32,8 @@ int headers_unicity()
 		tree = searchTree(root, headers[i]);
 		if( tree != NULL )
 		{
-			printf("tree : %s\n", getElementTag(tree->node, NULL));
 			if( tree->next != NULL )
 			{
-				printf("tree : %s\n", getElementTag(tree->next->node, NULL));
 				purgeElement(&tree);
 				return -1;
 			}
@@ -62,17 +60,26 @@ int method_conformity()
 		return -1;
 
 	if(tree->next != NULL)
+	{
+		purgeElement(&tree);
 		return -1;
+	}
 
 	method = getElementValue(tree->node, &len);
-	elements.method = malloc(sizeof(char) * (len+1));
+	elements.method = malloc(len+1);
 	strncpy(elements.method, method, len);
 	if( (strncmp(method, "GET", len) != 0) && (strncmp(method, "HEAD", len) != 0) && (strncmp(method, "POST", len) != 0) )
 	{
 		if( !strncmp(method, "PUT", len) || !strncmp(method, "DELETE", len) || !strncmp(method, "CONNECT", len) || !strncmp(method, "OPTIONS", len) || !strncmp(method, "TRACE", len))
+		{
+			purgeElement(&tree);
 			return -2;
+		}
 		else
+		{
+			purgeElement(&tree);
 			return -1;
+		}
 	}
 
 	if( strncmp(method, "GET", len) == 0 )
@@ -82,8 +89,12 @@ int method_conformity()
 		{
 			body = getElementValue(tree->node, &body_len);
 			if( body_len != 0 )
+			{
+				purgeElement(&tree);
 				return -1;
+			}
 		}
+		purgeElement(&tree);
 	}
 	else if( strncmp(method, "HEAD", len) == 0 )
 	{
@@ -92,8 +103,12 @@ int method_conformity()
 		{
 			body = getElementValue(tree->node, &body_len);
 			if( body_len != 0 )
+			{
+				purgeElement(&tree);
 				return -1;
+			}
 		}
+		purgeElement(&tree);
 	}
 	else if( strncmp(method, "POST", len) == 0 )
 	{
@@ -110,8 +125,12 @@ int method_conformity()
 
 			if( atoi(tmp) != strlen(body))
 			{
+				free(tmp);
+				purgeElement(&tree);
 				return -1;
 			}
+			purgeElement(&tree);
+			free(tmp);
 		}
 		else{
 			return -1;
@@ -136,10 +155,13 @@ int http_check()
 	if( tree == NULL )
 		return -1;
 	if ( tree->next != NULL )
+	{
+		purgeElement(&tree);
 		return -1;
+	}
 
 	version = getElementValue(tree->node, &len);
-	printf("VERSION : %s", version);
+	elements.version = malloc(len+1);
 	strncpy(elements.version,version, len);
 
 	if( strncmp(version, "HTTP/1.0", len) == 0 )
@@ -149,11 +171,16 @@ int http_check()
 		if( tree != NULL )
 		{
 			etat = getElementValue(tree->node, &len);
-			strncpy(elements.connection, etat+strlen("Connection: "), len-strlen("Connection: "));
-			printf("Statut de la connexion :%s\n", elements.connection);
+			elements.connection = malloc(len +1);
+			strncpy(elements.connection, etat+12, len-12);
+			printf("Statut de la connexion: %s\n", elements.connection);
 		}
 		else
+		{
+			elements.connection = malloc(6);
 			strcpy(elements.connection, "close");
+		}
+		purgeElement(&tree);
 		return 0;
 	}
 	else if( strncmp(version, "HTTP/1.1", len) == 0 )
@@ -164,12 +191,16 @@ int http_check()
 		if( tree != NULL )
 		{
 			etat = getElementValue(tree->node, &len);
-			strncpy(elements.connection, etat+strlen("Connection: "), len-strlen("Connection: "));
-			printf("Statut de la connexion :%s\n", elements.connection);
+			elements.connection = malloc(len+1);
+			strncpy(elements.connection, etat+12, len-12);
+			printf("Statut de la connexion: %s\n", elements.connection);
 		}
 		else
+		{
+			elements.connection = malloc(11);
 			strcpy(elements.connection, "keep_alive");
-		
+		}
+		purgeElement(&tree);
 		return 0;
 	}
 
@@ -177,13 +208,14 @@ int http_check()
 	if( tmp > (float)(MAX_MAJOR_VERSION+0.1*MAX_MINOR_VERSION) )
 		return -1;
 
+	purgeElement(&tree);
 	return 0;
 }
 
 
 int isHex(char c)
 {
-	return (c >= 48 && c <= 57) || (c >= 65 && c <= 70) || (c >= 97 && c <= 102); 
+	return (c >= 48 && c <= 57) || (c >= 65 && c <= 70) || (c >= 97 && c <= 102);
 }
 
 int request_target_treatment()
@@ -210,15 +242,19 @@ int request_target_treatment()
 		return -1;
 
 	if(tree->next != NULL)
+	{
+		purgeElement(&tree);
 		return -1;
+	}
 
 	rtarget = getElementValue(tree->node, &len);
 
 	//Vérification origin form
 	if( strncmp(origin_form, rtarget, len) != 0 )
+	{
+		purgeElement(&tree);
 		return -1;
-
-	printf("target initial : %d %s\n",len, rtarget);
+	}
 
 	rtarget_pe = malloc(sizeof(char)*len+1);
 
@@ -287,7 +323,7 @@ int request_target_treatment()
 	rtarget_dsr[j] = '\0';
 
 
-	char* rtarget_final = malloc( sizeof(char) * (strlen(rtarget_dsr) + strlen("index.html") + 5));
+	char* rtarget_final = malloc( sizeof(char) * (strlen(rtarget_dsr) + strlen("index.html") + 32));
 
 
 
@@ -299,7 +335,7 @@ int request_target_treatment()
 		if(strncmp("www.", host+6, 4))
 			strcat(rtarget_final, "www.");
 		if(strncmp("127.0.0.1:8080", host+6, 14) == 0) //Redirection par défaut sur www.default.com
-			strcat(rtarget_final, "default.com");
+			strcat(rtarget_final, "toto.com");
 		else
 			strncat(rtarget_final, host+6, host_len-strlen("Host: "));
 	}
@@ -319,8 +355,14 @@ int request_target_treatment()
 		strcat(rtarget_final, "index.html");
 	}
 	printf("target = %s\n", rtarget_final);
-	elements.uri = malloc(sizeof(char) * strlen(rtarget_final));
+	elements.uri = malloc(sizeof(char) * strlen(rtarget_final)+1);
 	strcpy(elements.uri, rtarget_final);
+
+	purgeElement(&tree);
+	free(hexa);
+	free(rtarget_final);
+	free(rtarget_pe);
+	free(rtarget_dsr);
 
 	return 0;
 }
@@ -356,10 +398,8 @@ int get_content()
 
 	fseek(f, 0, SEEK_SET);
 
-	elements.content = malloc(sizeof(char) * len);
+	elements.content = malloc(len + 1);
 	fread( elements.content, 1, len, f);
-
-	printf("content : \n%s\n", elements.content);
 
 	fclose(f);
 
@@ -368,10 +408,10 @@ int get_content()
 
 void get_Mime()
 {
-	char* cmd = malloc(sizeof(char)* (strlen("file -i ") + strlen(elements.uri)) );
+	char* cmd = malloc(sizeof(char)* (strlen("file -i ") + strlen(elements.uri) +1) );
 	strcpy(cmd, "file -i ");
 	strcat(cmd, elements.uri);
-	printf("check : %s\n", elements.uri);
+	printf("check : %s\n", cmd);
 
 	FILE* f = popen(cmd, "r");
 
@@ -393,19 +433,18 @@ void get_Mime()
 		tmp = strtok( NULL, ":; ");
 		if(tmp != NULL)
 		{
-			elements.mime = malloc(sizeof(char) * strlen(tmp));
+			elements.mime = malloc(sizeof(char) * strlen(tmp) + 1);
 			strcpy(elements.mime, tmp);
 		}
 	}
 
+	free(cmd);
 	pclose(f);
 }
 
 
 char* semantic_validation()
 {
-	elements.version = malloc(sizeof(char) * 10);
-	elements.connection = malloc(sizeof(char) * 11);
 	char* response = malloc(sizeof(char) * 100);
 	int method_ret;
 	if( headers_unicity() == -1 ) //On regarde si chaque header est unique
@@ -433,6 +472,8 @@ char* createResponse(char* statuscode)
 	time_t t = time(NULL);
 	char buf[256];
 	char* response;
+	char* len;
+	int size = 0;
 	if( strcmp(statuscode, "200 OK") != 0 )
 	{
 		response = malloc(sizeof(char)* 512);
@@ -444,6 +485,13 @@ char* createResponse(char* statuscode)
 			strcat(response, "\r\n");
 			strcat(response, "Allow: GET, POST, HEAD");
 		}
+		strcat(response, "\r\n");
+		strcat(response, "Content-Length: ");
+		len = malloc(10);
+		size = strlen(statuscode);
+		size += 16;
+		sprintf(len, "%d", size);
+		strcat(response, len);
 		strcat(response, "\r\n\r\n");
 		strcat(response, "<html>");
 		strcat(response, "Error ");
@@ -452,7 +500,7 @@ char* createResponse(char* statuscode)
 	}
 	else
 	{
-		response = malloc(sizeof(char)* 512 + strlen(elements.content));
+		response = malloc(512 + strlen(elements.content));
 		strcpy(response, elements.version);
 		strcat(response, " ");
 		strcat(response, statuscode);
@@ -468,8 +516,9 @@ char* createResponse(char* statuscode)
 		strcat(response, elements.mime);
 		strcat(response, "\r\n");
 		strcat(response, "Content-Length: ");
-		char* len;
-		sprintf(len, "%ld", strlen(elements.content));
+		len = malloc(10);
+		size = strlen(elements.content);
+		sprintf(len, "%d", size);
 		strcat(response, len);
 		strcat(response, "\r\n\r\n");
 		if(strcmp(elements.method, "HEAD") != 0)
@@ -477,7 +526,19 @@ char* createResponse(char* statuscode)
 			strcat(response, elements.content);
 			strcat(response, "\r\n");
 		}
-	}
 
+	}
+	free(len);
+	free(elements.method);
+	free(elements.version);
+	free(elements.uri);
+	free(elements.content);
+	free(elements.mime);
+	printf("\n\n%s\n\n", response);
 	return response;
+}
+
+char* get_connection()
+{
+	return elements.connection;
 }
