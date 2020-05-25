@@ -408,11 +408,8 @@ int get_content()
 	printf("taille %ld\n", len);
 	elements.content = calloc(len + 1, 1);
 	elements.content_len = len;
-	for( long i = 0; i < len; i++)
-	{
-		elements.content[i] = fgetc(f);
-	}
-	//fread( elements.content, 1, len, f);
+
+	fread( elements.content, 1, len, f);
 	printf("%s\n", elements.content);
 
 	fclose(f);
