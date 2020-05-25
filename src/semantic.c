@@ -375,6 +375,7 @@ int get_content()
 {
 	if( access(elements.uri, R_OK) == -1 )
 	{
+		elements.access = 0;
 		printf("ERREUR ACCESS\n");
 		return -1;
 	}
@@ -383,6 +384,7 @@ int get_content()
 
 	if( elements.mime == NULL )
 	{
+		elements.access = 0;
 		printf("ERREUR MIME\n");
 		return -1;
 	}
@@ -390,13 +392,14 @@ int get_content()
 	FILE* f = fopen(elements.uri, "rb");
 	if( f == NULL )
 	{
+		elements.access = 0;
 		printf("ERREUR FOPEN\n");
 		return -1;
 	}
 
 	fseek(f, 0, SEEK_END);
 
-	int len = ftell(f);
+	size_t len = ftell(f);
 
 	fseek(f, 0, SEEK_SET);
 
@@ -421,6 +424,7 @@ void get_Mime()
 	char info[1024];
 	if( fgets(info, sizeof(info)-1, f) == NULL)
 	{
+		elements.access = 0;
 		printf("ERREUR FGETS\n");
 		pclose(f);
 		return;
@@ -451,6 +455,7 @@ char* semantic_validation()
 {
 	char* response = calloc(100, 1);
 	int method_ret;
+	elements.access = 1;
 	if( headers_unicity() == -1 ) //On regarde si chaque header est unique
 		strcpy(response, "400 Bad Request");
 	method_ret = method_conformity();
@@ -536,8 +541,11 @@ char* createResponse(char* statuscode)
 	free(elements.method);
 	free(elements.version);
 	free(elements.uri);
-	free(elements.content);
-	free(elements.mime);
+	if(elements.access == 1)
+	{
+		free(elements.content);
+		free(elements.mime);
+	}
 	printf("\n\n%s\n\n", response);
 	return response;
 }

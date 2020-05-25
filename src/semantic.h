@@ -9,6 +9,7 @@ typedef struct elements
 	char* uri;
 	char* mime;
 	char* content;
+	int access;
 } Elements;
 
 char* get_connection();
