@@ -392,7 +392,7 @@ int get_content()
 		return -1;
 	}
 
-	FILE* f = fopen(elements.uri, "rb");
+	FILE* f = fopen(elements.uri, "a+");
 	if( f == NULL )
 	{
 		elements.access = 0;
@@ -405,9 +405,10 @@ int get_content()
 	size_t len = ftell(f);
 
 	fseek(f, 0, SEEK_SET);
-
+	printf("taille %ld\n", len);
 	elements.content = calloc(len + 1, 1);
 	fread( elements.content, 1, len, f);
+	printf("%s\n", elements.content);
 
 	fclose(f);
 

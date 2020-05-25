@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 		sendReponse(res);
 
 		char* co = get_connection();
-		if (strcmp(co,"close")){
+		if (strcmp(co,"close") == 0){
 			requestShutdownSocket(res->clientId);
 		}
 
