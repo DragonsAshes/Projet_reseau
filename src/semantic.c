@@ -43,7 +43,7 @@ int headers_unicity()
 	return 0;
 }
 
-
+//Retourne 0 si la méthode est conforme et que le message body l'est aussi
 int method_conformity()
 {
 	_Token* tree;
@@ -140,7 +140,7 @@ int method_conformity()
 	return 0;
 }
 
-
+//Retourne 0 si la version d'http est supportée par le serveur
 int http_check()
 {
 	_Token* tree;
@@ -212,12 +212,14 @@ int http_check()
 	return 0;
 }
 
-
+//Fonction permettant de détermine si un cractère est un caractère hexadecimal
 int isHex(char c)
 {
 	return (c >= 48 && c <= 57) || (c >= 65 && c <= 70) || (c >= 97 && c <= 102);
 }
 
+/*Fonction permettant de vérifier le type origin-form, de réaliser le percent encoding et le dot segment removal
+Cette fonction forme aussi le path absolu vers le fichier en prenant en compte l'existence ou non du host header*/
 int request_target_treatment()
 {
 	_Token* tree;
@@ -368,7 +370,7 @@ int request_target_treatment()
 }
 
 
-
+//Fonction permettant de récupérer le contenu d'un fichier
 int get_content()
 {
 	if( access(elements.uri, R_OK) == -1 )
@@ -406,6 +408,7 @@ int get_content()
 	return 0;
 }
 
+//Fonction permettant de déterminer le type mime d'un fichier
 void get_Mime()
 {
 	char* cmd = calloc(strlen("file -i ") + strlen(elements.uri) +1, 1);
@@ -443,6 +446,7 @@ void get_Mime()
 }
 
 
+//Cette fonction réalise la vérification sémantique et retourne le statuscode approprié
 char* semantic_validation()
 {
 	char* response = calloc(100, 1);
@@ -466,7 +470,7 @@ char* semantic_validation()
 	return response;
 }
 
-
+//Cette fonction permet de créer la réponse en fonction du statuscode et des éléments récupérer dans la structure elements
 char* createResponse(char* statuscode)
 {
 	time_t t = time(NULL);

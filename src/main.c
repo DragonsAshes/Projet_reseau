@@ -48,12 +48,14 @@ int main(int argc, char* argv[])
 
 		sendReponse(res);
 
-		free(response);
-		free(res);
 		char* co = get_connection();
 		if (strcmp(co,"close")){
 			requestShutdownSocket(res->clientId);
 		}
+
+		//Libération de l'espace mémoire
+		free(response);
+		free(res);
 		purgeTree(getRootTree());
 		freeRequest(requete);
 		free(validation_sem);
