@@ -81,7 +81,7 @@ int method_conformity()
 			return -1;
 		}
 	}
-
+	purgeElement(&tree);
 	if( strncmp(method, "GET", len) == 0 )
 	{
 		tree = searchTree(root, "message_body");
@@ -116,6 +116,7 @@ int method_conformity()
 		if( tree != NULL )
 		{
 			body = getElementValue(tree->node, &body_len);
+			purgeElement(&tree);
 			tree = searchTree(root, "Content_Length_header");
 			if( tree == NULL )
 				return -1;
@@ -163,7 +164,7 @@ int http_check()
 	version = getElementValue(tree->node, &len);
 	elements.version = calloc(len+1, 1);
 	strncpy(elements.version,version, len);
-
+	purgeElement(&tree);
 	if( strncmp(version, "HTTP/1.0", len) == 0 )
 	{
 		//On récupère l'état de la connexion
@@ -187,6 +188,7 @@ int http_check()
 	{
 		if( searchTree(root, "Host_header") == NULL )
 			return -1;
+		purgeElement(&tree);
 		tree = searchTree(root, "Connection_header");
 		if( tree != NULL )
 		{
@@ -237,6 +239,7 @@ int request_target_treatment()
 		return -1;
 	origin_form = getElementValue(tree->node, &len);
 
+	purgeElement(&tree);
 	tree = searchTree(root, "request_target");
 
 
@@ -328,7 +331,7 @@ int request_target_treatment()
 	char* rtarget_final = calloc(strlen(rtarget_dsr) + strlen("index.html") + 32, 1);
 
 
-
+	purgeElement(&tree);
 	tree = searchTree(root, "Host_header");
 	if( tree != NULL )
 	{

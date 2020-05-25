@@ -56,10 +56,10 @@ int main(int argc, char* argv[])
 		//Libération de l'espace mémoire
 		free(response);
 		free(res);
+		free(co);
+		free(validation_sem);
 		purgeTree(getRootTree());
 		freeRequest(requete);
-		free(validation_sem);
-		free(co);
 	}
 	return 1;
 }
