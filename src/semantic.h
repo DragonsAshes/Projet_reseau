@@ -10,6 +10,7 @@ typedef struct elements
 	char* mime;
 	char* content;
 	int access;
+	size_t content_len;
 } Elements;
 
 char* get_connection();

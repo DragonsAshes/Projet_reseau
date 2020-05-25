@@ -407,7 +407,12 @@ int get_content()
 	fseek(f, 0, SEEK_SET);
 	printf("taille %ld\n", len);
 	elements.content = calloc(len + 1, 1);
-	fread( elements.content, 1, len, f);
+	elements.content_len = len;
+	for( long i = 0; i < len; i++)
+	{
+		elements.content[i] = fgetc(f);
+	}
+	//fread( elements.content, 1, len, f);
 	printf("%s\n", elements.content);
 
 	fclose(f);
@@ -536,7 +541,7 @@ char* createResponse(char* statuscode)
 		strcat(response, "\r\n\r\n");
 		if(strcmp(elements.method, "HEAD") != 0)
 		{
-			strcat(response, elements.content);
+			strncat(response, elements.content, elements.content_len);
 			strcat(response, "\r\n");
 		}
 
