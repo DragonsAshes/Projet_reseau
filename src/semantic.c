@@ -205,6 +205,8 @@ int http_check()
 		return 0;
 	}
 
+	elements.connection = calloc(6, 1);
+	strcpy(elements.connection, "close");
 	tmp = atof(version+5);
 	if( tmp > (float)(MAX_MAJOR_VERSION+0.1*MAX_MINOR_VERSION) )
 		return -1;
