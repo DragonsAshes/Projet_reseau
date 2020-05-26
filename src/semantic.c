@@ -37,8 +37,8 @@ int headers_unicity()
 				purgeElement(&tree);
 				return -1;
 			}
+			purgeElement(&tree);
 		}
-		purgeElement(&tree);
 	}
 	return 0;
 }
@@ -68,33 +68,33 @@ int method_conformity()
 	method = getElementValue(tree->node, &len);
 	elements.method = calloc(len+1, 1);
 	strncpy(elements.method, method, len);
+	purgeElement(&tree);
+
 	if( (strncmp(method, "GET", len) != 0) && (strncmp(method, "HEAD", len) != 0) && (strncmp(method, "POST", len) != 0) )
 	{
 		if( !strncmp(method, "PUT", len) || !strncmp(method, "DELETE", len) || !strncmp(method, "CONNECT", len) || !strncmp(method, "OPTIONS", len) || !strncmp(method, "TRACE", len))
 		{
-			purgeElement(&tree);
 			return -2;
 		}
 		else
 		{
-			purgeElement(&tree);
 			return -1;
 		}
 	}
-	purgeElement(&tree);
+	
 	if( strncmp(method, "GET", len) == 0 )
 	{
 		tree = searchTree(root, "message_body");
 		if( tree != NULL )
 		{
 			body = getElementValue(tree->node, &body_len);
+			purgeElement(&tree);
 			if( body_len != 0 )
 			{
-				purgeElement(&tree);
+
 				return -1;
 			}
 		}
-		purgeElement(&tree);
 	}
 	else if( strncmp(method, "HEAD", len) == 0 )
 	{
@@ -102,13 +102,13 @@ int method_conformity()
 		if( tree != NULL )
 		{
 			body = getElementValue(tree->node, &body_len);
+			purgeElement(&tree);
 			if( body_len != 0 )
-			{
-				purgeElement(&tree);
+			{	
 				return -1;
 			}
 		}
-		purgeElement(&tree);
+		
 	}
 	else if( strncmp(method, "POST", len) == 0 )
 	{
@@ -121,16 +121,15 @@ int method_conformity()
 			if( tree == NULL )
 				return -1;
 			content_length = getElementValue(tree->node, &len);
+			purgeElement(&tree);
 			tmp = calloc(len-strlen("Content-Length: "), 1);
 			strncpy(tmp, content_length+strlen("Content-Length: "), len-strlen("Content-Length: "));
 
 			if( atoi(tmp) != strlen(body))
 			{
 				free(tmp);
-				purgeElement(&tree);
 				return -1;
 			}
-			purgeElement(&tree);
 			free(tmp);
 		}
 		else{
@@ -172,6 +171,7 @@ int http_check()
 		if( tree != NULL )
 		{
 			etat = getElementValue(tree->node, &len);
+			purgeElement(&tree);
 			elements.connection = calloc(len +1, 1);
 			strncpy(elements.connection, etat+strlen("Connection: "), len-strlen("Connection: "));
 			printf("Statut de la connexion: %s\n", elements.connection);
@@ -181,7 +181,6 @@ int http_check()
 			elements.connection = calloc(6, 1);
 			strcpy(elements.connection, "close");
 		}
-		purgeElement(&tree);
 		return 0;
 	}
 	else if( strncmp(version, "HTTP/1.1", len) == 0 )
@@ -193,6 +192,7 @@ int http_check()
 		if( tree != NULL )
 		{
 			etat = getElementValue(tree->node, &len);
+			purgeElement(&tree);
 			elements.connection = calloc(len+1, 1);
 			strncpy(elements.connection, etat+strlen("Connection: "), len-strlen("Connection: "));
 			printf("Statut de la connexion: %s\n", elements.connection);
@@ -200,9 +200,8 @@ int http_check()
 		else
 		{
 			elements.connection = calloc(11, 1);
-			strcpy(elements.connection, "keep_alive");
+			strcpy(elements.connection, "keep-alive");
 		}
-		purgeElement(&tree);
 		return 0;
 	}
 
@@ -253,11 +252,11 @@ int request_target_treatment()
 	}
 
 	rtarget = getElementValue(tree->node, &len);
+	purgeElement(&tree);
 
 	//Vérification origin form
 	if( strncmp(origin_form, rtarget, len) != 0 )
 	{
-		purgeElement(&tree);
 		return -1;
 	}
 
@@ -331,12 +330,12 @@ int request_target_treatment()
 	char* rtarget_final = calloc(strlen(rtarget_dsr) + strlen("index.html") + 32, 1);
 
 
-	purgeElement(&tree);
 	tree = searchTree(root, "Host_header");
 	if( tree != NULL )
 	{
 		int host_len;
 		char* host = getElementValue(tree->node, &host_len);
+		purgeElement(&tree);
 		if(strncmp("www.", host+6, 4))
 			strcat(rtarget_final, "www.");
 		if(strncmp("127.0.0.1:8080", host+6, 14) == 0) //Redirection par défaut sur www.default.com
@@ -363,7 +362,6 @@ int request_target_treatment()
 	elements.uri = calloc(strlen(rtarget_final)+1, 1);
 	strcpy(elements.uri, rtarget_final);
 
-	purgeElement(&tree);
 	free(hexa);
 	free(rtarget_final);
 	free(rtarget_pe);
@@ -405,12 +403,10 @@ int get_content()
 	size_t len = ftell(f);
 
 	fseek(f, 0, SEEK_SET);
-	printf("taille %ld\n", len);
-	elements.content = calloc(len + 1, 1);
+	elements.content = malloc(len);
 	elements.content_len = len;
 
 	fread( elements.content, 1, len, f);
-	printf("%s\n", elements.content);
 
 	fclose(f);
 
@@ -420,39 +416,48 @@ int get_content()
 //Fonction permettant de déterminer le type mime d'un fichier
 void get_Mime()
 {
-	char* cmd = calloc(strlen("file -i ") + strlen(elements.uri) +1, 1);
-	strcpy(cmd, "file -i ");
-	strcat(cmd, elements.uri);
-	printf("check : %s\n", cmd);
-
-	FILE* f = popen(cmd, "r");
-
-	char info[1024];
-	if( fgets(info, sizeof(info)-1, f) == NULL)
+	if( strncmp( elements.uri + strlen(elements.uri) -3, "css", 3) == 0)
 	{
-		elements.access = 0;
-		printf("ERREUR FGETS\n");
-		pclose(f);
-		return;
+		elements.mime = calloc(9, 1);
+		strcpy(elements.mime, "text/css");
 	}
 
-	printf("info : %s\n", info);
-
-	char* tmp;
-	tmp = strtok(info, " :;");
-
-	if(tmp != NULL)
+	else
 	{
-		tmp = strtok( NULL, ":; ");
+		char* cmd = calloc(strlen("file -i ") + strlen(elements.uri) +1, 1);
+		strcpy(cmd, "file -i ");
+		strcat(cmd, elements.uri);
+		printf("check : %s\n", cmd);
+
+		FILE* f = popen(cmd, "r");
+
+		char info[1024];
+		if( fgets(info, sizeof(info)-1, f) == NULL)
+		{
+			elements.access = 0;
+			printf("ERREUR FGETS\n");
+			pclose(f);
+			return;
+		}
+
+		printf("info : %s\n", info);
+
+		char* tmp;
+		tmp = strtok(info, " :;");
+
 		if(tmp != NULL)
 		{
-			elements.mime = calloc(strlen(tmp) + 1, 1);
-			strcpy(elements.mime, tmp);
+			tmp = strtok( NULL, ":; ");
+			if(tmp != NULL)
+			{
+				elements.mime = calloc(strlen(tmp) + 1, 1);
+				strcpy(elements.mime, tmp);
+			}
 		}
-	}
 
-	free(cmd);
-	pclose(f);
+		free(cmd);
+		pclose(f);
+	}
 }
 
 
@@ -511,11 +516,12 @@ char* createResponse(char* statuscode)
 		strcat(response, "<html>");
 		strcat(response, "Error ");
 		strcat(response, statuscode);
-		strcat(response, "</html>");
+		strcat(response, "</html>\r\n");
+		elements.response_len = strlen(response);
 	}
 	else
 	{
-		response = calloc(512 + strlen(elements.content), 1);
+		response = calloc(512 + elements.content_len, 1);
 		strcpy(response, elements.version);
 		strcat(response, " ");
 		strcat(response, statuscode);
@@ -532,17 +538,21 @@ char* createResponse(char* statuscode)
 		strcat(response, "\r\n");
 		strcat(response, "Content-Length: ");
 		len = calloc(10, 1);
-		size = strlen(elements.content);
-		sprintf(len, "%d", size);
+		sprintf(len, "%ld", elements.content_len);
 		strcat(response, len);
 		strcat(response, "\r\n\r\n");
+		int size = strlen(response);
 		if(strcmp(elements.method, "HEAD") != 0)
 		{
-			strncat(response, elements.content, elements.content_len);
-			strcat(response, "\r\n");
+			//strncat(response, elements.content, elements.content_len);
+			memcpy(response + size, elements.content, elements.content_len);
+			//strcat(response, "\r\n");
 		}
+		elements.response_len = size + elements.content_len;
+
 
 	}
+
 	free(len);
 	free(elements.method);
 	free(elements.version);
@@ -559,4 +569,9 @@ char* createResponse(char* statuscode)
 char* get_connection()
 {
 	return elements.connection;
+}
+
+long get_reponse_len()
+{
+	return elements.response_len;
 }

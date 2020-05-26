@@ -11,6 +11,7 @@ typedef struct elements
 	char* content;
 	int access;
 	size_t content_len;
+	long response_len;
 } Elements;
 
 char* get_connection();
@@ -34,5 +35,9 @@ int get_content();
 char* createResponse(char* statuscode);
 
 void get_Mime();
+
+long get_reponse_len();
+
+void DumpHex(const void* data, size_t size);
 
 #endif

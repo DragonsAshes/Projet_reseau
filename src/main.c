@@ -13,7 +13,6 @@ int main(int argc, char* argv[])
 	message* requete;
 	char* response = NULL;
 	char* validation_sem = NULL;
-	_Token* tree;
 	message* res;
 
 	while (1)
@@ -43,8 +42,9 @@ int main(int argc, char* argv[])
 
 		res = malloc(sizeof(message));
 		res->buf=response;
-		res->len=strlen(response);
+		res->len=get_reponse_len();
 		res->clientId = requete->clientId;
+
 
 		sendReponse(res);
 
@@ -54,12 +54,13 @@ int main(int argc, char* argv[])
 		}
 
 		//Libération de l'espace mémoire
-		free(response);
+		freeRequest(requete);
+		free(res->buf);
 		free(res);
 		free(co);
 		free(validation_sem);
 		purgeTree(getRootTree());
-		freeRequest(requete);
+		
 	}
 	return 1;
 }
